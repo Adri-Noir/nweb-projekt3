@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Asteroids</title>
+    <link rel="stylesheet" href="asteroids.css">
+</head>
+<body>
+    <canvas id="asteroids-canvas" width="800" height="600"></canvas>
+    <div class="top-right-container">
+        <p class="score" id="high-score-top">Best Time: unknown</p>
+        <p class="lives" id="current-time">Current Time: 0</p>
+    </div>
+    <!--<button class="bottom-right-menu-button" onclick="game.showMenu()">menu</button>-->
+    <img src="spaceship.png" alt="spaceship" id="spaceship" width="100" height="100" style="display: none">
+    <img src="asteroid.png" alt="asteroid" id="asteroid" width="100" height="100" style="display: none">
+    <dialog class="center-dialog" id="game-over">
+        <p>Game Over</p>
+        <button class="menu-button" onclick="game.newGame()">Restart</button>
+        <button class="menu-button" onclick="game.showMenu()">Menu</button>
+    </dialog>
+    <dialog class="center-dialog" id="main-menu">
+        <p>Asteroids</p>
+        <button class="menu-button" onclick="game.newGame()">New Game</button>
+        <p class="menu-high-score" id="high-score">Best Time: unknown</p>
+    </dialog>
+</body>
+<script src="asteroids.js"></script>
+</html>
