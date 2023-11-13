@@ -75,14 +75,17 @@ class Asteroid {
         this.radius = radius;
         this.color = color;
         this.movementVector = movementVector;
+        this.rotationSpeed = Math.random() * 0.01 - 0.005;
+        this.currentRotation = 0;
     }
 
     draw() {
         this.canvas.ctx.save();
         this.canvas.ctx.translate(this.x, this.y);
+        this.canvas.ctx.rotate(this.currentRotation);
         const angle = Math.atan2(this.movementVector.y, this.movementVector.x);
         this.canvas.ctx.rotate(angle);
-        this.canvas.ctx.drawImage(asteroidImage, -this.radius, -this.radius, this.radius * 2, this.radius * 2);
+        this.canvas.ctx.drawImage(asteroidImage, -this.radius, -this.radius, this.radius * 2 + 10, this.radius * 2 + 10);
         this.canvas.ctx.restore();
     }
 
@@ -90,6 +93,7 @@ class Asteroid {
         this.draw();
         this.x = this.x + this.movementVector.x;
         this.y = this.y + this.movementVector.y;
+        this.currentRotation += this.rotationSpeed;
     }
 
     splitAsteroidConfiguration() {
@@ -100,13 +104,12 @@ class Asteroid {
         return [firstSize, 1 - firstSize];
     }
 
-    //TODO: fix angle of pieces
     splitAsteroidIntoPieces() {
         return this.splitAsteroidConfiguration().map((piece) => {
             const radius = this.radius * piece;
             const movementVector = {
-                x: this.movementVector.x + Math.random(),
-                y: this.movementVector.y + Math.random()
+                x: this.movementVector.x * (Math.random() * 0.4 + 0.6),
+                y: this.movementVector.y * (Math.random() * 0.4 + 0.6)
             }
             const initialX = this.x + Math.random() * radius;
             const initialY = this.y + Math.random() * radius;
@@ -136,8 +139,8 @@ class Bullet {
 
     update() {
         this.draw();
-        this.x = this.x + this.vector.x * this.velocity;
-        this.y = this.y + this.vector.y * this.velocity;
+        this.x += this.vector.x * this.velocity;
+        this.y += this.vector.y * this.velocity;
     }
 }
 
@@ -145,12 +148,12 @@ class Ship {
     color = '#eeeeee';
     radius = 20;
     maxSpeed = 0.02;
-    acceleration = 0.00075;
+    acceleration = 0.0008;
     deceleration = 0.0001;
     friction = 0.9925;
     rotationDegreePerCycle = 1.15;
     bulletRadius = 3;
-    bulletFrequency = FPS/5;
+    bulletFrequency = FPS/6;
     bulletVelocity = 5;
     lastBulletTime = this.bulletFrequency;
 
@@ -170,12 +173,11 @@ class Ship {
         this.addEventListeners();
     }
 
-    // TODO: maybe improve collision detection
     draw() {
         this.canvas.ctx.save();
         this.canvas.ctx.translate(this.x, this.y);
         this.canvas.ctx.rotate(this.shipAngle);
-        this.canvas.ctx.drawImage(spaceshipImage, -this.radius - 2.5, -this.radius - 2.5, this.radius * 2 + 5, this.radius * 2 + 5);
+        this.canvas.ctx.drawImage(spaceshipImage, -this.radius, -this.radius, this.radius * 2, this.radius * 2);
         if (this.keyPressed['ArrowUp']) {
             this.canvas.ctx.beginPath();
             this.canvas.ctx.fillStyle = '#9575cd';
@@ -212,7 +214,9 @@ class Ship {
         }
 
         if (this.keyPressed[' '] && this.lastBulletTime === this.bulletFrequency) {
-            const bullet = new Bullet(this.canvas, this.x, this.y, this.bulletRadius, {
+            const bulletX = this.x + Math.sin(this.shipAngle) * this.radius;
+            const bulletY = this.y - Math.cos(this.shipAngle) * this.radius;
+            const bullet = new Bullet(this.canvas, bulletX, bulletY, this.bulletRadius, {
                 x: Math.sin(this.shipAngle),
                 y: -Math.cos(this.shipAngle)
             }, this.bulletVelocity);
@@ -324,7 +328,7 @@ class Game {
         }
 
         if (this.asteroids.length === 0) {
-            this.generateAsteroid(6);
+            this.generateAsteroids();
         }
     }
 
@@ -344,15 +348,20 @@ class Game {
         }
     }
 
-    // TODO: improve level generation
-    generateAsteroid(n) {
+    generateAsteroids() {
+        let n = Math.floor(Math.random() * 10) + 5;
+        const timeDelta = Date.now() - this.startTime;
+        if (timeDelta > 30000) n += 5;
+        if (timeDelta > 60000) n += 5;
+        if (timeDelta > 500000) n += 5;
+
         for (let i = 0; i < n; i++) {
             const {x, y} = this.genAsteroidSpawnPosition();
             const radius = Math.random() * 50 + 25;
 
             const movementVector = {
-                x: (this.canvas.canvas.width / 2 - x) / 1000 + Math.random() * 0.5 - 0.25,
-                y: (this.canvas.canvas.height / 2 - y) / 1000 + Math.random() * 0.5 - 0.25
+                x: (this.canvas.canvas.width / 2 - x) / 1000 + Math.random() - 0.5,
+                y: (this.canvas.canvas.height / 2 - y) / 1000 + Math.random() - 0.5
             }
             this.asteroids.push(new Asteroid(this.canvas, x, y, radius, '#eeeeee', movementVector));
         }
@@ -395,7 +404,7 @@ class Game {
         mainMenuDialog.close();
         this.ship = new Ship(this.canvas);
         this.asteroids = [];
-        this.generateAsteroid(2);
+        this.generateAsteroids();
         this.startTime = Date.now();
         this.timeCounterInterval = setInterval(this.updateCurrentTime.bind(this), 50);
         this.game();
