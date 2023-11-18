@@ -8,8 +8,6 @@ const asteroidImage = document.getElementById('asteroid');
 const gameOverDialog = document.getElementById('game-over');
 const mainMenuDialog = document.getElementById('main-menu');
 const highScoreElement = document.getElementById('high-score');
-const highScoreTop = document.getElementById('high-score-top');
-const currentTimeElement = document.getElementById('current-time');
 
 class Canvas {
     starColors = ['#e0f7fa', '#fff176', '#ffd54f', '#ffb74d', '#f57c00', '#e65100'];
@@ -61,6 +59,22 @@ class Canvas {
     update() {
         this.clear();
         this.fill();
+    }
+
+    drawCurrentTime(time) {
+        this.ctx.save();
+        this.ctx.font = '18px Arial';
+        this.ctx.fillStyle = '#eeeeee';
+        this.ctx.fillText(time, this.canvas.width - 200, 30);
+        this.ctx.restore();
+    }
+
+    drawHighScore(time) {
+        this.ctx.save();
+        this.ctx.font = '18px Arial';
+        this.ctx.fillStyle = '#eeeeee';
+        this.ctx.fillText(time, this.canvas.width - 200, 60);
+        this.ctx.restore();
     }
 }
 
@@ -286,8 +300,8 @@ class Ship {
 
 class Game {
     startTime = Date.now();
-    timeCounterInterval = null;
     currentTime = 0;
+    highScore = localStorage.getItem(localStorageHighScoreKey);
 
     constructor() {
         this.canvas = new Canvas(asteroidsCanvas, '#212121');
@@ -379,24 +393,31 @@ class Game {
     }
 
     updateHighScore() {
-        const highScore = localStorage.getItem(localStorageHighScoreKey);
-        if (highScore) {
-            const minutes = Math.floor(highScore / 60000);
-            const seconds = Math.floor(highScore / 1000) % 60;
-            const milliseconds = highScore % 1000;
-            const bestTime = `Best Time: ${minutes}:${Math.floor(seconds)}.${milliseconds}`
-            highScoreElement.innerHTML = bestTime;
-            highScoreTop.innerHTML = bestTime;
+        this.highScore = localStorage.getItem(localStorageHighScoreKey);
+        if (this.highScore) {
+            const minutes = Math.floor(this.highScore / 60000);
+            const seconds = Math.floor(this.highScore / 1000) % 60;
+            const milliseconds = this.highScore % 1000;
+            highScoreElement.innerHTML = `Best Time: ${minutes}:${Math.floor(seconds)}.${milliseconds}`;
         }
     }
 
-    updateCurrentTime(inputTime) {
+    updateTimes(inputTime) {
+        let hsText = 'Best Time: -';
+        if (this.highScore) {
+            const minutes = Math.floor(this.highScore / 60000);
+            const seconds = Math.floor(this.highScore / 1000) % 60;
+            const milliseconds = this.highScore % 1000;
+            hsText = `Best Time: ${minutes}:${Math.floor(seconds)}.${milliseconds}`;
+        }
         const time = inputTime || Date.now() - this.startTime;
         this.currentTime = time;
         const minutes = Math.floor(time / 60000);
         const seconds = Math.floor(time / 1000) % 60;
         const milliseconds = time % 1000;
-        currentTimeElement.innerHTML = `Current Time: ${minutes}:${seconds}.${milliseconds}`;
+        const currentScoreText = `Time: ${minutes}:${seconds}.${milliseconds}`;
+        this.canvas.drawCurrentTime(currentScoreText);
+        this.canvas.drawHighScore(hsText);
     }
 
     newGame() {
@@ -406,25 +427,28 @@ class Game {
         this.asteroids = [];
         this.generateAsteroids();
         this.startTime = Date.now();
-        this.timeCounterInterval = setInterval(this.updateCurrentTime.bind(this), 50);
         this.game();
     }
 
     endGame() {
-        clearInterval(this.timeCounterInterval);
         const time = Date.now() - this.startTime;
         this.ship.removeEventListeners();
-        const highScore = localStorage.getItem(localStorageHighScoreKey);
-        if (!highScore || highScore < time) {
+        this.highScore = localStorage.getItem(localStorageHighScoreKey);
+        if (!this.highScore || this.highScore < time) {
             localStorage.setItem(localStorageHighScoreKey, time);
+            this.highScore = time;
         }
-        this.updateCurrentTime(time);
+        this.canvas.update();
+        this.updateTimes();
+        this.ship.update();
+        this.asteroids.forEach(asteroid => asteroid.update());
         this.updateHighScore();
         this.showGameOverDialog();
     }
 
     game() {
         this.canvas.update();
+        this.updateTimes();
         this.ship.update();
         this.checkIfBulletHitAsteroid();
         this.checkIfAsteroidOutOfCanvas();
