@@ -9,6 +9,9 @@ const gameOverDialog = document.getElementById('game-over');
 const mainMenuDialog = document.getElementById('main-menu');
 const highScoreElement = document.getElementById('high-score');
 
+/**
+ * Class for controlling the canvas
+ */
 class Canvas {
     starColors = ['#e0f7fa', '#fff176', '#ffd54f', '#ffb74d', '#f57c00', '#e65100'];
     constructor(canvas, backgroundColor) {
@@ -22,6 +25,11 @@ class Canvas {
         this.stars = this._generateMovingBackground();
     }
 
+    /**
+     * Generates starts with random positions and colors
+     * @returns list of stars
+     * @private
+     */
     _generateMovingBackground() {
         const stars = [];
         for (let i = 0; i < 150; i++) {
@@ -35,10 +43,16 @@ class Canvas {
         return stars;
     }
 
+    /**
+     * Generates the background
+     */
     generateMovingBackground() {
         this.stars = this._generateMovingBackground();
     }
 
+    /**
+     * Fills the canvas with the background color and draws the stars
+     */
     fill() {
         this.ctx.fillStyle = this.backgroundColor;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -52,15 +66,25 @@ class Canvas {
         });
     }
 
+    /**
+     * Clears the canvas
+     */
     clear() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
 
+    /**
+     * Updates the canvas
+     */
     update() {
         this.clear();
         this.fill();
     }
 
+    /**
+     * Draws the current time
+     * @param time - time to draw
+     */
     drawCurrentTime(time) {
         this.ctx.save();
         this.ctx.font = '18px Arial';
@@ -69,6 +93,10 @@ class Canvas {
         this.ctx.restore();
     }
 
+    /**
+     * Draws the high score
+     * @param time - high score to draw
+     */
     drawHighScore(time) {
         this.ctx.save();
         this.ctx.font = '18px Arial';
@@ -79,6 +107,9 @@ class Canvas {
 }
 
 
+/**
+ * Class for controlling the asteroids
+ */
 class Asteroid {
     pieceRadiusThreshold = 20;
 
@@ -93,6 +124,9 @@ class Asteroid {
         this.currentRotation = 0;
     }
 
+    /**
+     * Draws the asteroid
+     */
     draw() {
         this.canvas.ctx.save();
         this.canvas.ctx.translate(this.x, this.y);
@@ -103,6 +137,9 @@ class Asteroid {
         this.canvas.ctx.restore();
     }
 
+    /**
+     * Updates the asteroid
+     */
     update() {
         this.draw();
         this.x = this.x + this.movementVector.x;
@@ -110,6 +147,10 @@ class Asteroid {
         this.currentRotation += this.rotationSpeed;
     }
 
+    /**
+     * Splits the asteroid into pieces
+     * @returns {number[]|*[]} - list of pieces
+     */
     splitAsteroidConfiguration() {
         if (this.radius < this.pieceRadiusThreshold) return [];
 
@@ -118,6 +159,10 @@ class Asteroid {
         return [firstSize, 1 - firstSize];
     }
 
+    /**
+     * Splits the asteroid into pieces
+     * @returns {Asteroid[]} - list of new asteroids
+     */
     splitAsteroidIntoPieces() {
         return this.splitAsteroidConfiguration().map((piece) => {
             const radius = this.radius * piece;
@@ -132,6 +177,9 @@ class Asteroid {
     }
 }
 
+/**
+ * Class for controlling the bullets
+ */
 class Bullet {
     color = '#64ffda';
     constructor(canvas, x, y, radius, vector, velocity) {
@@ -143,6 +191,9 @@ class Bullet {
         this.velocity = velocity;
     }
 
+    /**
+     * Draws the bullet
+     */
     draw() {
         this.canvas.ctx.beginPath();
         this.canvas.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
@@ -151,6 +202,9 @@ class Bullet {
         this.canvas.ctx.closePath();
     }
 
+    /**
+     * Updates the bullet
+     */
     update() {
         this.draw();
         this.x += this.vector.x * this.velocity;
@@ -187,6 +241,9 @@ class Ship {
         this.addEventListeners();
     }
 
+    /**
+     * Draws the ship
+     */
     draw() {
         this.canvas.ctx.save();
         this.canvas.ctx.translate(this.x, this.y);
@@ -206,6 +263,9 @@ class Ship {
         this.canvas.ctx.restore();
     }
 
+    /**
+     * Updates the ship and the bullets
+     */
     update() {
         if (this.keyPressed['ArrowUp']) {
             if (this.speed < this.maxSpeed) this.speed += this.acceleration;
@@ -276,20 +336,34 @@ class Ship {
         this.draw();
     }
 
+    /**
+     * When a key is pressed, it is added to the list of pressed keys
+     * @param event
+     */
     keyDownEvent(event) {
         this.keyPressed[event.key] = true;
     }
 
+    /**
+     * When a key is released, it is removed from the list of pressed keys
+     * @param event
+     */
     keyUpEvent(event) {
         this.keyPressed[event.key] = false;
     }
 
+    /**
+     * Adds event listeners for key presses
+     */
     addEventListeners() {
         this.keyPressed = {};
         document.addEventListener('keydown', this.keyDownEvent.bind(this));
         document.addEventListener('keyup', this.keyUpEvent.bind(this));
     }
 
+    /**
+     * Removes event listeners for key presses
+     */
     removeEventListeners() {
         this.keyPressed = {};
         document.removeEventListener('keydown', this.keyDownEvent.bind(this));
@@ -298,6 +372,9 @@ class Ship {
 
 }
 
+/**
+ * Class for controlling the game
+ */
 class Game {
     startTime = Date.now();
     currentTime = 0;
@@ -309,6 +386,9 @@ class Game {
         this.showMenu();
     }
 
+    /**
+     * Checks if a bullet hit an asteroid and if so, splits the asteroid into pieces
+     */
     checkIfBulletHitAsteroid() {
         this.ship.bullets.forEach((bullet, bulletIndex) => {
             this.asteroids.forEach((asteroid, asteroidIndex) => {
@@ -323,6 +403,10 @@ class Game {
         });
     }
 
+    /**
+     * Checks if an asteroid hit the ship
+     * @returns {boolean} - true if an asteroid hit the ship, false otherwise
+     */
     checkIfAsteroidHitShip() {
         for (let i = 0; i < this.asteroids.length; i++) {
             const asteroid = this.asteroids[i];
@@ -333,6 +417,9 @@ class Game {
         }
     }
 
+    /**
+     * Checks if an asteroid is out of the canvas and if so, removes it
+     */
     checkIfAsteroidOutOfCanvas() {
         for (let i = 0; i < this.asteroids.length; i++) {
             const asteroid = this.asteroids[i];
@@ -346,6 +433,10 @@ class Game {
         }
     }
 
+    /**
+     * Generates a random position for an asteroid
+     * @returns {{x: *, y: number}|{x: number, y: *}|{x: number, y: number}} - position of the asteroid
+     */
     genAsteroidSpawnPosition() {
         const side = Math.floor(Math.random() * 4);
         const x = Math.random() * this.canvas.canvas.width;
@@ -362,6 +453,9 @@ class Game {
         }
     }
 
+    /**
+     * Generates asteroids with random positions and movement vectors depending on the time passed
+     */
     generateAsteroids() {
         let n = Math.floor(Math.random() * 10) + 5;
         const timeDelta = Date.now() - this.startTime;
@@ -381,17 +475,26 @@ class Game {
         }
     }
 
+    /**
+     * Shows the game over dialog
+     */
     showGameOverDialog() {
         mainMenuDialog.close();
         gameOverDialog.show();
     }
 
+    /**
+     * Shows the main menu dialog
+     */
     showMenu() {
         this.updateHighScore();
         gameOverDialog.close();
         mainMenuDialog.show();
     }
 
+    /**
+     * Updates the high score
+     */
     updateHighScore() {
         this.highScore = localStorage.getItem(localStorageHighScoreKey);
         if (this.highScore) {
@@ -402,6 +505,10 @@ class Game {
         }
     }
 
+    /**
+     * Updates the current time and the high score
+     * @param inputTime - time to update
+     */
     updateTimes(inputTime) {
         let hsText = 'Best Time: -';
         if (this.highScore) {
@@ -420,6 +527,9 @@ class Game {
         this.canvas.drawHighScore(hsText);
     }
 
+    /**
+     * Starts a new game
+     */
     newGame() {
         gameOverDialog.close();
         mainMenuDialog.close();
@@ -430,6 +540,9 @@ class Game {
         this.game();
     }
 
+    /**
+     * Ends the game
+     */
     endGame() {
         const time = Date.now() - this.startTime;
         this.ship.removeEventListeners();
@@ -446,6 +559,10 @@ class Game {
         this.showGameOverDialog();
     }
 
+    /**
+     * Main game loop
+     * Updates the canvas, the ship, the asteroids and checks if the game is over
+     */
     game() {
         this.canvas.update();
         this.updateTimes();
